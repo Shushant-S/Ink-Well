@@ -10,11 +10,13 @@ const Blog = () => {
   const { loading, blog } = useBlog({
     id: (id || "1")
   });
+  const isAuthenticated = localStorage.getItem("token") || "";
+ 
 
   if(loading || !blog){
     return( 
       <div>
-        <Appbar/>
+        <Appbar isAuthenticated={isAuthenticated}/>
         <div className="h-screen flex flex-col justify-center">
           <div className="flex justify-center">
             <Spinner/>

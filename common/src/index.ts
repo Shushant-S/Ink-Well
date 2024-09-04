@@ -16,7 +16,8 @@ export const signinInput = z.object({
 
 export const createBlogInput = z.object({
     title: z.string(),
-    content: z.string()
+    content: z.string(),
+    imageUrl: z.string()
 })
 
 

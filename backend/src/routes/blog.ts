@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import { verify } from "hono/jwt";
 
 
-
+// types of expected inputs
 export const blogRoute = new Hono<{
     Bindings:{
         DATABASE_URL: string
@@ -17,7 +17,7 @@ export const blogRoute = new Hono<{
 }>();
 
 
-blogRoute.use('/*', async(c, next) => {
+const authMiddleware = async(c:any, next:any) => {
   
   const authHeader = c.req.header("authorization") || "";
 
@@ -41,45 +41,119 @@ blogRoute.use('/*', async(c, next) => {
         message: "unauthorized request"
       })
   }
+}
 
 
-})
 
 
+blogRoute.post('/test', authMiddleware, async (c) => {
+  
+  console.log("reached inside the test");
 
-blogRoute.post("/", async (c) => {
+  const userId = c.get("userId");
 
-    const body = await c.req.json();
+  console.log("reached inside the test 2");
 
-    const success = createBlogInput.safeParse(body);
+  if (!userId) {
+    console.log("User ID not found in context");
+    return c.json({ message: "User ID not found in context" });
+  }
 
-    if(!success){
-      c.status(411);
-      return c.json({
-        message: "invalid inputs"
-      })
+  console.log("reached inside the test 3");
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    console.log("reached inside the try block");
+    
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) }
+    });
+
+    console.log("reached inside the try block 2");
+
+    if (user) {
+      console.log("User found:", user);
+      return c.json({user});
+    } else {
+      console.log("User not found");
+      return c.json({ message: "User not found" });
     }
+  } catch (e) {
+    console.error('Error fetching user:', e);
+    return c.json({ message: "Failed to fetch user" });
+  } finally {
+    await prisma.$disconnect();
+  }
+});
 
-    const userId = c.get("userId")
 
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
+
+
+
+blogRoute.post("/", authMiddleware, async (c) => { 
+
+  const body = await c.req.json();
+  const success = createBlogInput.safeParse(body);
+
+  if (!success) {
+    c.status(411);
+    return c.json({ message: "Invalid inputs" });
+  }
+
+  const userId = c.get("userId");
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    // Check if the user exists
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) },
+    });
+
+    if (!user) {
+      c.status(404);
+      return c.json({ message: "User not found" });
+    }
 
     const blog = await prisma.blog.create({
       data: {
         title: body.title,
         content: body.content,
-        authorId: Number(userId)
+        imageUrl: body.imageUrl,
+        authorId: Number(userId),
+        publishedAt: new Date(),
       }
-    })
+    });
 
-  return c.json({ id: blog.id });
+    const author = await prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: { name: true },
+    });
+
+console.log('Fetched user:', user);
+    // Update the blog post to include the author's name
+    await prisma.blog.update({
+      where: { id: blog.id },
+      data: { authorName: author?.name || 'No author name' },
+    });
+
+
+    return c.json({ id: blog.id });
+  } catch (e) {
+    c.status(500);
+    return c.json({ message: "Failed to create blog post" });
+  }
 });
 
 
 
-blogRoute.put("/", async (c) => {
+
+blogRoute.put("/", authMiddleware, async (c) => {
 
   const body = await c.req.json();
 
@@ -110,7 +184,7 @@ blogRoute.put("/", async (c) => {
 });
 
 
-// adding pagination
+
 blogRoute.get("/bulk", async (c) => {
 
   const prisma = new PrismaClient({
@@ -123,11 +197,9 @@ blogRoute.get("/bulk", async (c) => {
       content: true,
       title: true,
       id: true,
-      author:{
-        select:{
-          name: true
-        }
-      }
+      publishedAt: true,
+      imageUrl: true,
+      authorName: true,
     }
   })
 
@@ -153,6 +225,7 @@ blogRoute.get("/:id", async(c) => {
         id: true,
         title: true,
         content: true,
+        publishedAt: true,
         author: {
           select:{
             name: true
@@ -172,6 +245,3 @@ blogRoute.get("/:id", async(c) => {
     })
   }
 });
-
-
-

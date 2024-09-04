@@ -34,6 +34,7 @@ userRoute.post('/signup', async (c) => {
     try{
       const user = await prisma.user.create({
         data: {
+          name: body.name,
           username: body.username,
           password: body.password
         }
@@ -41,7 +42,7 @@ userRoute.post('/signup', async (c) => {
     
       const token = await sign({id: user.id}, c.env.JWT_SECRET)
       
-      return c.json({jwt: token});
+      return c.json({username: user.username, jwt: token});
     }catch(e){
       c.status(411)
       return c.json({
@@ -88,7 +89,7 @@ userRoute.post('/signin', async (c) => {
     
       const jwt = await sign({id: user.id}, c.env.JWT_SECRET);
     
-      return c.json({message: "user logged in", jwt: jwt});
+      return c.json({message: "user logged in", jwt: jwt, username: user.username});
     }catch(e){
 
       c.status(411)

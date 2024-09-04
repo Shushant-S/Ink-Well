@@ -36,7 +36,7 @@ export const Auth = ({ type }: { type: "signup" | "signin" }) => {
           <div className="px-10">
             <div className="text-3xl font-bold">Create an account</div>
             <div className="text-slate-500">
-              {type === "signin" ? "Don't have an account?" : "Already have an account?"}
+              Already have an account?
               <Link className="underline pl-2 hover:text-black " to={type === "signin" ? "/signup" : "/signin"}>
                 {type === "signin" ? "Sign up" : "Sign in"}
               </Link>
@@ -45,6 +45,7 @@ export const Auth = ({ type }: { type: "signup" | "signin" }) => {
           <div className="pt-8">
             {type === "signup" ? <LabelledInput
               label="Name"
+              required
               placeholder="Enter your name"
               onChange={(e) => {
                 setPostInputs((c) => ({
@@ -56,6 +57,7 @@ export const Auth = ({ type }: { type: "signup" | "signin" }) => {
             <LabelledInput
               label="username"
               type={"email"}
+              required
               placeholder="xyz@gmai.com"
               onChange={(e) => {
                 setPostInputs((c) => ({
@@ -68,6 +70,7 @@ export const Auth = ({ type }: { type: "signup" | "signin" }) => {
               label="Password"
               type={"password"}
               placeholder="*****"
+              required
               onChange={(e) => {
                 setPostInputs((c) => ({
                   ...c,
@@ -86,6 +89,7 @@ export const Auth = ({ type }: { type: "signup" | "signin" }) => {
 
 interface labelledInputType {
   label: string;
+  required?: boolean,
   placeholder: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   type?: string;
@@ -94,9 +98,12 @@ interface labelledInputType {
 function LabelledInput({
   label,
   placeholder,
+  required,
   type,
   onChange,
 }: labelledInputType) {
+
+
   return (
     <div>
       <div>
@@ -109,7 +116,7 @@ function LabelledInput({
           onChange={onChange}
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
           placeholder={placeholder}
-          required
+          required={required}
         />
       </div>
     </div>

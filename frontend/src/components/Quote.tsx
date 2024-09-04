@@ -8,7 +8,7 @@ const Quote = () => {
             went above and beyond to address my concerns"
           </div>
           <div className="font-semibold text-xl text-left max-w-md text-slate-600 mt-2">
-            shushant sarve
+            - shushant sarve
           </div>
         </div>
         </div>
